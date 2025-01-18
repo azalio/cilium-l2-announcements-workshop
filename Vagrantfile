@@ -110,6 +110,9 @@ Vagrant.configure("2") do |config|
       cp /vagrant/vg-scripts/add-routes.sh /etc/network/if-up.d/add-routes
       chmod +x /etc/network/if-up.d/add-routes
       /etc/network/if-up.d/add-routes
+      
+      # Add static route to 10.0.10.0/24
+      ip route add 10.0.10.0/24 via 192.168.56.20 dev eth1 || true
     SHELL
   end
 end
