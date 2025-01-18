@@ -70,13 +70,7 @@ Vagrant.configure("2") do |config|
       auto_config: true,
       virtualbox__intnet: true
     
-    jumpbox.vm.provision "shell", inline: <<-SHELL
-      # Additional jumpbox-specific tools
-      apt-get install -y sshpass tree jq
-      # Setup SSH key forwarding
-      echo "AllowAgentForwarding yes" >> /etc/ssh/sshd_config
-      systemctl restart sshd
-    SHELL
+    jumpbox.vm.provision "shell", path: "vg-scripts/jumpbox-setup.sh"
   end
 
   config.vm.define "server" do |server|
@@ -90,6 +84,8 @@ Vagrant.configure("2") do |config|
       netmask: "255.255.255.0",
       auto_config: true,
       virtualbox__intnet: true
+    
+    server.vm.provision "shell", path: "vg-scripts/control-plane-setup.sh"
   end
   
   # Worker nodes configuration
@@ -106,6 +102,7 @@ Vagrant.configure("2") do |config|
         auto_config: true,
         virtualbox__intnet: true
 
+      node.vm.provision "shell", path: "vg-scripts/worker-node-setup.sh"
     end
   end
 end
