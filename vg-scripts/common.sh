@@ -41,6 +41,9 @@
 # Date: 2024
 # Version: 1.0
 
+# Подключение вспомогательных функций
+source /vagrant/vg-scripts/utils.sh
+
 # Exit codes
 readonly E_GENERAL=1
 readonly E_PREREQ=2
@@ -61,32 +64,6 @@ trap 'error_handler $? $LINENO $BASH_LINENO "$BASH_COMMAND" $(printf "::%s" ${FU
 # Logging setup
 exec 1> >(tee -a /var/log/k8s-setup.log) 2>&1
 
-# Functions
-error_handler() {
-    local exit_code=$1
-    local line_no=$2
-    local bash_lineno=$3
-    local last_command=$4
-    local error_msg="${5:-}"
-    
-    echo "Error occurred in script at line: $line_no"
-    echo "Command: $last_command"
-    echo "Exit code: $exit_code"
-    
-    cleanup
-    exit "${exit_code}"
-}
-
-log() {
-    local msg="$1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $msg"
-}
-
-cleanup() {
-    log "Performing cleanup..."
-    apt-get clean
-    rm -rf /var/lib/apt/lists/*
-}
 
 check_prerequisites() {
     log "Validating system requirements for Kubernetes node type: ${NODE_TYPE}"

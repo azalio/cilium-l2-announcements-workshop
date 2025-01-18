@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Подключение вспомогательных функций
+source /vagrant/vg-scripts/utils.sh
+
 # Ensure packages are up to date
 # apt-get update
 
