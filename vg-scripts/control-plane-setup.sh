@@ -90,6 +90,11 @@ mkdir -p /root/.kube
 cp -i /etc/kubernetes/admin.conf /root/.kube/config
 chown root:root /root/.kube/config
 
+# Configure podCIDR for the server node
+kubectl --kubeconfig=/etc/kubernetes/kubelet.conf patch node server --type merge -p '{"spec":{"podCIDR":"10.200.0.0/24"}}'
+
+log "Configured podCIDR for server node"
+
 log "Installing Helm..."
 
 # Download Helm installation script
@@ -117,8 +122,3 @@ helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-sy
   --set operator.replicas=1
 
 log "Cilium installed successfully"
-
-# Configure podCIDR for the server node
-kubectl --kubeconfig=/etc/kubernetes/kubelet.conf patch node server --type merge -p '{"spec":{"podCIDR":"10.200.0.0/24"}}'
-
-log "Configured podCIDR for server node"
