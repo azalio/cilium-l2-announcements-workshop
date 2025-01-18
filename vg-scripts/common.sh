@@ -136,6 +136,10 @@ if ! apt-get update -y; then
     exit $E_PACKAGE
 fi
 
+# Add Kubernetes repo
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+
 PACKAGES=(
     software-properties-common
     curl
@@ -156,12 +160,20 @@ PACKAGES=(
     conntrack
     ipset
     bridge-utils
+    kubelet=1.32.1-1.1
+    kubeadm=1.32.1-1.1
+    kubectl=1.32.1-1.1
+    containerd
+    cri-tools
 )
 
 if ! apt-get install -y "${PACKAGES[@]}"; then
     log "ERROR: Failed to install required packages"
     exit $E_PACKAGE
 fi
+
+# Hold Kubernetes packages at specific version
+apt-mark hold kubelet kubeadm kubectl
 
 cat >> /etc/hosts <<EOF
 192.168.56.20 server.kubernetes.local server

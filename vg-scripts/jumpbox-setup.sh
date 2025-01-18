@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Установка kubectl
-curl -LO "https://dl.k8s.io/release/v1.32.1/bin/linux/arm64/kubectl"
-install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+apt-get update
+apt-get install -y kubectl=1.32.1-1.1
 
 # Копирование конфигурации с control plane
 mkdir -p /root/.kube
