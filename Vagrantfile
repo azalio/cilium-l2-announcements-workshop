@@ -16,7 +16,7 @@
 #   - ARM64 architecture support
 #
 # Author: Mikhail [azalio] Petrov
-# Date: 2024
+# Date: 2025
 # Version: 1.0
 
 # Validate requirements
