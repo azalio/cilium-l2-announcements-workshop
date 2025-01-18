@@ -25,7 +25,6 @@ raise 'VMware Desktop provider required' unless Vagrant.has_plugin?('vagrant-vmw
 # Configuration Variables
 NETWORK_PREFIX = "192.168.56"
 VM_SETTINGS = {
-  'jumpbox' => { memory: 1024, cpus: 1, ip: "#{NETWORK_PREFIX}.10" },
   'server'  => { memory: 2048, cpus: 2, ip: "#{NETWORK_PREFIX}.20" },  # Increased CPUs from 1 to 2
   'node-0'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.50" },
   'node-1'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.60" }
@@ -58,20 +57,6 @@ Vagrant.configure("2") do |config|
   # Common configuration script
   config.vm.provision "shell", path: "vg-scripts/common.sh"
 
-  config.vm.define "jumpbox", primary: true do |jumpbox|
-    jumpbox.vm.hostname = "jumpbox"
-    jumpbox.vm.provider "vmware_desktop" do |vmware|
-      vmware.memory = VM_SETTINGS['jumpbox'][:memory]
-      vmware.cpus = VM_SETTINGS['jumpbox'][:cpus]
-    end
-    jumpbox.vm.network "private_network", 
-      ip: VM_SETTINGS['jumpbox'][:ip],
-      netmask: "255.255.255.0",
-      auto_config: true,
-      virtualbox__intnet: true
-    
-    jumpbox.vm.provision "shell", path: "vg-scripts/jumpbox-setup.sh"
-  end
 
   config.vm.define "server" do |server|
     server.vm.hostname = "server"

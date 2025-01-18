@@ -56,8 +56,6 @@ readonly E_PACKAGE=4
 readonly NODE_TYPE=$(hostname)
 
 # Resource requirements by node type
-readonly JUMPBOX_RAM_KB=240000    # ~240MB in KB (binary)
-readonly JUMPBOX_DISK_KB=10485760 # 10GB in KB
 readonly NODE_RAM_KB=1945600      # 1900MB in KB (binary)
 readonly NODE_DISK_KB=20971520    # 20GB in KB
 
@@ -104,12 +102,6 @@ check_prerequisites() {
     # Jumpbox needs minimal resources for management tools
     local required_ram_kb=$NODE_RAM_KB
     local required_disk_kb=$NODE_DISK_KB
-    
-    if [[ "${NODE_TYPE}" == "jumpbox" ]]; then
-        log "Configuring jumpbox requirements for cluster management"
-        required_ram_kb=$JUMPBOX_RAM_KB
-        required_disk_kb=$JUMPBOX_DISK_KB
-    fi
     
     # Check RAM
     local ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
