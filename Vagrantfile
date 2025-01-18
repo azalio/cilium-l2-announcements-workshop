@@ -26,7 +26,8 @@ NETWORK_PREFIX = "192.168.56"
 VM_SETTINGS = {
   'server'  => { memory: 2048, cpus: 2, ip: "#{NETWORK_PREFIX}.20" },  # Increased CPUs from 1 to 2
   'node-0'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.50" },
-  'node-1'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.60" }
+  'node-1'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.60" },
+  'jumpbox' => { memory: 1024, cpus: 1, ip: "#{NETWORK_PREFIX}.10" }
 }
 
 Vagrant.require_version ">= 2.3.0"
@@ -88,5 +89,27 @@ Vagrant.configure("2") do |config|
 
       node.vm.provision "shell", path: "vg-scripts/worker-node-setup.sh"
     end
+  end
+
+  # Jumpbox configuration
+  config.vm.define "jumpbox" do |jumpbox|
+    jumpbox.vm.hostname = "jumpbox"
+    jumpbox.vm.provider "vmware_desktop" do |vmware|
+      vmware.memory = VM_SETTINGS['jumpbox'][:memory]
+      vmware.cpus = VM_SETTINGS['jumpbox'][:cpus]
+    end
+    jumpbox.vm.network "private_network",
+      ip: VM_SETTINGS['jumpbox'][:ip],
+      netmask: "255.255.255.0",
+      auto_config: true,
+      virtualbox__intnet: true
+
+    # Configure network routes for jumpbox
+    jumpbox.vm.provision "shell", inline: <<-SHELL
+      echo "Configuring network routes for jumpbox..."
+      cp /vagrant/vg-scripts/add-routes.sh /etc/network/if-up.d/add-routes
+      chmod +x /etc/network/if-up.d/add-routes
+      /etc/network/if-up.d/add-routes
+    SHELL
   end
 end
