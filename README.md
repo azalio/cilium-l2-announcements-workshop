@@ -25,6 +25,7 @@
 - **Маршрутизация между узлами**: Настроены статические маршруты для связи между подсетями подов.
 - **SystemdCgroup**: Включен в конфигурации `containerd` для поддержки cgroups v2.
 - **Использование kubeadm**: Упрощенная установка Kubernetes с помощью `kubeadm`.
+- **Синхронизация директории workshop**: Директория `workshop` синхронизирована с control-plane узлом (`server`) и доступна по пути `/home/vagrant/workshop`.
 
 ## Сетевой плагин (CNI)
 
@@ -33,6 +34,7 @@
 - **IPAM**: Kubernetes (использует `spec.podCIDR` для выделения IP-адресов).
 - **L2-анонсы**: Включены для поддержки L2-коммуникации.
 - **Замена kube-proxy**: Включена для повышения производительности.
+- **Native Routing**: Используется режим `native` для маршрутизации трафика через существующую сетевую инфраструктуру (без туннелей).
 - **Подсети для подов**:
   - `10.200.0.0/24` для server
   - `10.200.1.0/24` для node-0
@@ -75,6 +77,12 @@
    kubectl -n kube-system get pods -l name=cilium-operator
    ```
 
+6. Проверьте синхронизацию директории `workshop`:
+   ```bash
+   vagrant ssh server
+   ls /home/vagrant/workshop
+   ```
+
 ## Настройка сети
 
 - **Маршруты между узлами**:
@@ -104,11 +112,6 @@
 - Проверьте состояние L2-анонсов:
   ```bash
   kubectl -n kube-system exec -it <cilium-pod-name> -- cilium status
-  ```
-
-- Проверьте маршруты между узлами:
-  ```bash
-  kubectl -n kube-system exec -it <cilium-pod-name> -- cilium bpf tunnel list
   ```
 
 ## Авторы
