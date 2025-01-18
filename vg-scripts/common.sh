@@ -130,15 +130,17 @@ check_prerequisites() {
 log "Starting Kubernetes node setup..."
 check_prerequisites
 
-log "Installing required packages..."
+# Add Kubernetes repo for v1.32.1
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+
+# Update package lists after adding new repo
 if ! apt-get update -y; then
     log "ERROR: Failed to update package lists"
     exit $E_PACKAGE
 fi
 
-# Add Kubernetes repo for v1.32.1
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+log "Installing required packages..."
 
 PACKAGES=(
     software-properties-common
