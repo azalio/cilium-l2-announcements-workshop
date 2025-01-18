@@ -360,6 +360,11 @@ case "${NODE_TYPE}" in
     "node-1")
         POD_SUBNET="10.200.2.0/24"
         ;;
+    "jumpbox")
+        # Для jumpbox не требуется подсеть для подов
+        log "Skipping pod network routes configuration for jumpbox"
+        exit 0
+        ;;
     *)
         log "Unknown node type: ${NODE_TYPE}"
         exit 1
