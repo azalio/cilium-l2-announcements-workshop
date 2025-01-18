@@ -106,6 +106,18 @@ rm get_helm.sh
 
 log "Helm installed successfully"
 
+# Install Cilium CNI
+helm repo add cilium https://helm.cilium.io/
+helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-system \
+  --set l2announcements.enabled=true \
+  --set kubeProxyReplacement=true \
+  --set ipam.mode=kubernetes \
+  --set k8sServiceHost=192.168.56.20 \
+  --set k8sServicePort=6443 \
+  --set operator.replicas=1
+
+log "Cilium installed successfully"
+
 # Configure podCIDR for the server node
 kubectl --kubeconfig=/etc/kubernetes/kubelet.conf patch node server --type merge -p '{"spec":{"podCIDR":"10.200.0.0/24"}}'
 
