@@ -11,3 +11,4 @@ spec:
   - ^eth[0-9]+
   externalIPs: true
   loadBalancerIPs: true
+  
