@@ -258,7 +258,7 @@ sed -i \
   's/^#PermitRootLogin.*/PermitRootLogin yes/' \
   /etc/ssh/sshd_config
 
-if [[ "${NODE_TYPE}" == "jumpbox" ]]; then
+# if [[ "${NODE_TYPE}" == "jumpbox" ]]; then
 
 echo 'LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFB
 QUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFB
@@ -316,7 +316,7 @@ Host *
 EOF
 
 
-else
+# else
 
 echo 'c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FEOUFCM3NscnBSL1NMTWRNekhM
 WTdiWHMwZERWblp2T2NXYlpiQnczR05OSWVBWVIrZDRsYW1MRmEzRnRweTBUbFdnMVNrNW9uU3JW
@@ -329,7 +329,7 @@ aG5hZEp6L2FwRks1dnRWbXhRZVBzbzdlakE1Z0VYeVVhMnk4RUJZeHhzM24xRStScGtLMXBlZWFY
 M0kyanNpRDdjY0xSbjYxa0o3eUdta1NuN0wwcDBicGJLVzJRTVFITGNJb1gvbnNyaVE5VC85ZnAr
 MTVwcERUSGxtRTQxaEkweHgrMGpXUFhMZW1xTzEyeDlESlZNdDg9IHJvb3RAc2VydmVyCg==' | base64 -d >> /root/.ssh/authorized_keys
 
-fi
+# fi
 
 systemctl restart sshd
 
