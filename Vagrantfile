@@ -69,7 +69,10 @@ Vagrant.configure("2") do |config|
       netmask: "255.255.255.0",
       auto_config: true,
       virtualbox__intnet: true
-    
+
+    # Sync workshop directory to VM
+    server.vm.synced_folder "workshop", "/home/vagrant/workshop"
+
     server.vm.provision "shell", path: "vg-scripts/control-plane-setup.sh"
   end
   
