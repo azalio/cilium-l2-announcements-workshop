@@ -42,8 +42,8 @@
 
 2. Клонируйте репозиторий:
    ```bash
-   git clone <ваш-репозиторий>
-   cd <ваш-репозиторий>
+   git clone https://github.com/azalio/cilium-l2-announcements-workshop.git
+   cd cilium-l2-announcements-workshop
    ```
 
 3. Запустите виртуальные машины:
