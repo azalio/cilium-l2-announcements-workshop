@@ -22,3 +22,9 @@ elif [[ $(hostname) == "node-1" ]]; then
   kubectl --kubeconfig=/etc/kubernetes/kubelet.conf patch node node-1 --type merge -p '{"spec":{"podCIDR":"10.200.2.0/24"}}'
   log "Configured podCIDR for node-1"
 fi
+
+# Install network routes script
+log "Configuring network routes for eth1 interface..."
+cp /vagrant/vg-scripts/add-routes.sh /etc/network/if-up.d/add-routes
+chmod +x /etc/network/if-up.d/add-routes
+log "Network routes script installed"

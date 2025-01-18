@@ -146,3 +146,9 @@ helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-sy
   --set ingressController.loadbalancerMode=dedicated 
 
 log "Cilium installed successfully"
+
+# Install network routes script
+log "Configuring network routes for eth1 interface..."
+cp /vagrant/vg-scripts/add-routes.sh /etc/network/if-up.d/add-routes
+chmod +x /etc/network/if-up.d/add-routes
+log "Network routes script installed"
