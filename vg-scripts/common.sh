@@ -362,4 +362,16 @@ EOF
 
 fi
 
+log "Configuring crictl for containerd..."
+
+# Create crictl configuration file
+cat > /etc/crictl.yaml <<EOF
+runtime-endpoint: unix:///run/containerd/containerd.sock
+image-endpoint: unix:///run/containerd/containerd.sock
+timeout: 10
+debug: false
+EOF
+
+log "crictl configured successfully"
+
 log "Successfully completed Kubernetes node setup"
