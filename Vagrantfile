@@ -26,7 +26,7 @@ raise 'VMware Desktop provider required' unless Vagrant.has_plugin?('vagrant-vmw
 NETWORK_PREFIX = "192.168.56"
 VM_SETTINGS = {
   'jumpbox' => { memory: 1024, cpus: 1, ip: "#{NETWORK_PREFIX}.10" },
-  'server'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.20" },
+  'server'  => { memory: 2048, cpus: 2, ip: "#{NETWORK_PREFIX}.20" },  # Increased CPUs from 1 to 2
   'node-0'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.50" },
   'node-1'  => { memory: 2048, cpus: 1, ip: "#{NETWORK_PREFIX}.60" }
 }
@@ -77,7 +77,7 @@ Vagrant.configure("2") do |config|
     server.vm.hostname = "server"
     server.vm.provider "vmware_desktop" do |vmware|
       vmware.memory = VM_SETTINGS['server'][:memory]
-      vmware.cpus = VM_SETTINGS['server'][:cpus]
+      vmware.cpus = 2  # Increased from 1 to 2 for Kubernetes control plane requirements
     end
     server.vm.network "private_network", 
       ip: VM_SETTINGS['server'][:ip],
