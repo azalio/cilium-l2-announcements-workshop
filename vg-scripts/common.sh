@@ -300,7 +300,7 @@ log "Configuring firewall rules..."
 
 sysctl -w net.ipv4.ip_forward=1
 
-log "Configuring containerd to use correct pause image..."
+log "Configuring containerd to use correct pause image and enable SystemdCgroup..."
 
 # Create or update containerd configuration
 mkdir -p /etc/containerd
@@ -309,10 +309,13 @@ containerd config default > /etc/containerd/config.toml
 # Update pause image to version 3.10
 sed -i 's|registry.k8s.io/pause:3.6|registry.k8s.io/pause:3.10|g' /etc/containerd/config.toml
 
+# Enable SystemdCgroup
+sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/a \ \ \ \ SystemdCgroup = true' /etc/containerd/config.toml
+
 # Restart containerd to apply changes
 systemctl restart containerd
 
-log "Containerd configured with pause image: registry.k8s.io/pause:3.10"
+log "Containerd configured with pause image: registry.k8s.io/pause:3.10 and SystemdCgroup enabled"
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
 if [[ "${NODE_TYPE}" == "server" ]]; then
