@@ -57,7 +57,12 @@ certificateValidityPeriod: 8760h0m0s
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
 controlPlaneEndpoint: 192.168.56.20:6443
-controllerManager: {}
+controllerManager:
+  extraArgs:
+    - name: "allocate-node-cidrs"
+      value: "false"
+    - name: "cluster-cidr"
+      value: ""
 dns: {}
 encryptionAlgorithm: RSA-2048
 etcd:
@@ -119,6 +124,9 @@ helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-sy
   --set ipam.mode=kubernetes \
   --set k8sServiceHost=192.168.56.20 \
   --set k8sServicePort=6443 \
-  --set operator.replicas=1
+  --set operator.replicas=1 \
+  --set routingMode=native \
+  --set ipv4NativeRoutingCIDR=10.200.0.0/22 \
+  --set endpointRoutes.enabled=true
 
 log "Cilium installed successfully"
