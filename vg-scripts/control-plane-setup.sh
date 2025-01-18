@@ -1,65 +1,85 @@
 #!/bin/bash
 
 # Ensure packages are up to date
-apt-get update
-# apt-get upgrade -y
-
-# Инициализация кластера (без kube-proxy)
-kubeadm init --skip-phases=addon/kube-proxy
-
-# Настройка доступа для root
-mkdir -p /root/.kube
-cp -i /etc/kubernetes/admin.conf /root/.kube/config
-chown root:root /root/.kube/config
-#!/bin/bash
+# apt-get update
 
 # Создание конфигурационного файла для kubeadm
 cat <<EOF > /root/kubeadm-config.yaml
-apiVersion: kubeadm.k8s.io/v1beta3
-kind: InitConfiguration
+apiVersion: kubeadm.k8s.io/v1beta4
 bootstrapTokens:
-- token: "9a08jv.c0izixklcxtmnze7"
-  description: "kubeadm bootstrap token"
-  ttl: "24h"
-nodeRegistration:
-  name: "server"
-  criSocket: "/var/run/containerd/containerd.sock"
-  kubeletExtraArgs:
-    node-ip: "192.168.56.20"
+- description: kubeadm bootstrap token
+  groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: 9a08jv.c0izixklcxtmnze7
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: "192.168.56.20"
+  advertiseAddress: 192.168.56.20
   bindPort: 6443
+nodeRegistration:
+  criSocket: unix:///var/run/containerd/containerd.sock
+  imagePullPolicy: IfNotPresent
+  imagePullSerial: true
+  kubeletExtraArgs:
+  - name: node-ip
+    value: 192.168.56.20
+  name: server
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
 skipPhases:
-  - addon/kube-proxy  # Пропуск установки kube-proxy
+- addon/kube-proxy
+timeouts:
+  controlPlaneComponentHealthCheck: 4m0s
+  discovery: 5m0s
+  etcdAPICall: 2m0s
+  kubeletHealthCheck: 4m0s
+  kubernetesAPICall: 1m0s
+  tlsBootstrap: 5m0s
+  upgradeManifests: 5m0s
 ---
-apiVersion: kubeadm.k8s.io/v1beta3
-kind: ClusterConfiguration
-etcd:
-  local:
-    dataDir: "/var/lib/etcd"
-    extraArgs:
-      listen-client-urls: "http://192.168.56.20:2379"
-      advertise-client-urls: "http://192.168.56.20:2379"
-networking:
-  serviceSubnet: "10.96.0.0/16"
-  podSubnet: "10.244.0.0/16"
-  dnsDomain: "cluster.local"
-kubernetesVersion: "v1.32.1"
-controlPlaneEndpoint: "192.168.56.20:6443"
 apiServer:
-  extraArgs:
-    advertise-address: "192.168.56.20"
   certSANs:
-    - "192.168.56.20"
-    - "server.kubernetes.local"
+  - 192.168.56.20
+  - server.kubernetes.local
+  extraArgs:
+  - name: advertise-address
+    value: 192.168.56.20
+apiVersion: kubeadm.k8s.io/v1beta4
+caCertificateValidityPeriod: 87600h0m0s
+certificateValidityPeriod: 8760h0m0s
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: 192.168.56.20:6443
 controllerManager:
   extraArgs:
-    node-cidr-mask-size: "24"
+  - name: node-cidr-mask-size
+    value: "24"
+dns: {}
+encryptionAlgorithm: RSA-2048
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+    extraArgs:
+    - name: advertise-client-urls
+      value: https://192.168.56.20:2379
+    - name: listen-client-urls
+      value: https://192.168.56.20:2379
+imageRepository: registry.k8s.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.32.1
+networking:
+  dnsDomain: cluster.local
+#   podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+proxy: {}
 scheduler:
   extraArgs:
-    bind-address: "192.168.56.20"
-certificatesDir: "/etc/kubernetes/pki"
-imageRepository: "registry.k8s.io"
+  - name: bind-address
+    value: 192.168.56.20
 EOF
 
 # Инициализация control-plane с использованием конфигурационного файла
