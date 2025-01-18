@@ -68,20 +68,24 @@ exec 1> >(tee -a /var/log/k8s-setup.log) 2>&1
 check_prerequisites() {
     log "Validating system requirements for Kubernetes node type: ${NODE_TYPE}"
     
-    # Determine resource requirements based on node role
-    # Control plane nodes need more resources for etcd, API server, and controllers
-    # Worker nodes need resources for container runtime and pods
+    # Пропустить проверку для jumpbox
+    if [[ "${NODE_TYPE}" == "jumpbox" ]]; then
+        log "Skipping resource validation for jumpbox"
+        return 0
+    fi
+
+    # Определение требований к ресурсам в зависимости от роли узла
     local required_ram_kb=$NODE_RAM_KB
     local required_disk_kb=$NODE_DISK_KB
     
-    # Check RAM
+    # Проверка RAM
     local ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
     if [[ ${ram_kb} -lt ${required_ram_kb} ]]; then
         echo "Insufficient RAM. Required: $((required_ram_kb/1024))MB, Found: $((ram_kb/1024))MB"
         exit $E_PREREQ
     fi
     
-    # Check Disk Space
+    # Проверка Disk Space
     local disk_kb=$(df -k / | tail -1 | awk '{print $4}')
     if [[ ${disk_kb} -lt ${required_disk_kb} ]]; then
         echo "Insufficient disk space. Required: $((required_disk_kb/1024/1024))GB, Found: $((disk_kb/1024/1024))GB"
