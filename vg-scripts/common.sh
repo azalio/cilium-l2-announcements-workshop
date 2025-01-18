@@ -310,7 +310,7 @@ containerd config default > /etc/containerd/config.toml
 sed -i 's|registry.k8s.io/pause:3.6|registry.k8s.io/pause:3.10|g' /etc/containerd/config.toml
 
 # Enable SystemdCgroup
-sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/a \ \ \ \ SystemdCgroup = true' /etc/containerd/config.toml
+sed -i 's|SystemdCgroup = false|SystemdCgroup = true|' /etc/containerd/config.toml
 
 # Restart containerd to apply changes
 systemctl restart containerd

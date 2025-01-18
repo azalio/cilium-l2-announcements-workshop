@@ -4,7 +4,6 @@
 # Kubernetes The Hard Way - Vagrant Configuration
 # Purpose: Creates a multi-node Kubernetes cluster environment using VMware provider
 # Components:
-#   - Jumpbox (192.168.56.10): SSH gateway and management node
 #   - Server (192.168.56.20): Kubernetes control plane
 #   - Node-0 (192.168.56.50): Worker node
 #   - Node-1 (192.168.56.60): Worker node
