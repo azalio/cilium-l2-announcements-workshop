@@ -134,6 +134,7 @@ fi
 helm repo add cilium https://helm.cilium.io/
 helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-system \
   --set l2announcements.enabled=true \
+  --set externalIPs.enabled=true \
   --set kubeProxyReplacement=true \
   --set ipam.mode=kubernetes \
   --set k8sServiceHost=192.168.56.20 \
