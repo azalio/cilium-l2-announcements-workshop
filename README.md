@@ -26,6 +26,18 @@
 - **SystemdCgroup**: Включен в конфигурации `containerd` для поддержки cgroups v2.
 - **Использование kubeadm**: Упрощенная установка Kubernetes с помощью `kubeadm`.
 
+## Сетевой плагин (CNI)
+
+Для сетевого взаимодействия между подами используется **Cilium** с включенными L2-анонсами и заменой kube-proxy. Основные параметры конфигурации:
+
+- **IPAM**: Kubernetes (использует `spec.podCIDR` для выделения IP-адресов).
+- **L2-анонсы**: Включены для поддержки L2-коммуникации.
+- **Замена kube-proxy**: Включена для повышения производительности.
+- **Подсети для подов**:
+  - `10.200.0.0/24` для server
+  - `10.200.1.0/24` для node-0
+  - `10.200.2.0/24` для node-1
+
 ## Требования
 
 - **Vagrant 2.3+**
@@ -57,6 +69,12 @@
    kubectl get nodes
    ```
 
+5. Проверьте состояние Cilium:
+   ```bash
+   kubectl -n kube-system get pods -l k8s-app=cilium
+   kubectl -n kube-system get pods -l name=cilium-operator
+   ```
+
 ## Настройка сети
 
 - **Маршруты между узлами**:
@@ -74,6 +92,23 @@
   ```bash
   journalctl -u containerd
   kubectl describe node <имя-узла>
+  ```
+
+## Отладка Cilium
+
+- Проверьте логи Cilium:
+  ```bash
+  kubectl -n kube-system logs -l k8s-app=cilium
+  ```
+
+- Проверьте состояние L2-анонсов:
+  ```bash
+  kubectl -n kube-system exec -it <cilium-pod-name> -- cilium status
+  ```
+
+- Проверьте маршруты между узлами:
+  ```bash
+  kubectl -n kube-system exec -it <cilium-pod-name> -- cilium bpf tunnel list
   ```
 
 ## Авторы
