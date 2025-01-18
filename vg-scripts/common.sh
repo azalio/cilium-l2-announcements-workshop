@@ -339,6 +339,47 @@ EOF
 
 fi
 
+log "Configuring pod network routes..."
+
+# Определение подсети для каждого узла
+case "${NODE_TYPE}" in
+    "server")
+        POD_SUBNET="10.200.0.0/24"
+        ;;
+    "node-0")
+        POD_SUBNET="10.200.1.0/24"
+        ;;
+    "node-1")
+        POD_SUBNET="10.200.2.0/24"
+        ;;
+    *)
+        log "Unknown node type: ${NODE_TYPE}"
+        exit 1
+        ;;
+esac
+
+# Настройка маршрутов для других узлов
+if [[ "${NODE_TYPE}" == "server" ]]; then
+    ip route add 10.200.1.0/24 via 192.168.56.50
+    ip route add 10.200.2.0/24 via 192.168.56.60
+elif [[ "${NODE_TYPE}" == "node-0" ]]; then
+    ip route add 10.200.0.0/24 via 192.168.56.20
+    ip route add 10.200.2.0/24 via 192.168.56.60
+elif [[ "${NODE_TYPE}" == "node-1" ]]; then
+    ip route add 10.200.0.0/24 via 192.168.56.20
+    ip route add 10.200.1.0/24 via 192.168.56.50
+fi
+
+# Сохранение маршрутов в конфигурацию сети
+cat <<EOF > /etc/network/interfaces.d/90-pod-routes
+# Pod network routes
+up ip route add 10.200.0.0/24 via 192.168.56.20 || true
+up ip route add 10.200.1.0/24 via 192.168.56.50 || true
+up ip route add 10.200.2.0/24 via 192.168.56.60 || true
+EOF
+
+log "Pod network routes configured successfully"
+
 log "Configuring crictl for containerd..."
 
 # Create crictl configuration file

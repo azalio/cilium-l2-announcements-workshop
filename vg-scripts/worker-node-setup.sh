@@ -7,6 +7,9 @@ source /vagrant/vg-scripts/utils.sh
 # apt-get update
 # apt-get upgrade -y
 
+# Убедимся, что используется правильная подсеть для подов
+ssh -o StrictHostKeyChecking=no root@server "sed -i '/networking:/a \ \ podSubnet: 10.200.0.0/16' /root/kubeadm-config.yaml"
+
 # Получение команды для присоединения к кластеру
 JOIN_COMMAND=$(ssh -o StrictHostKeyChecking=no root@server "kubeadm token create --print-join-command")
 
