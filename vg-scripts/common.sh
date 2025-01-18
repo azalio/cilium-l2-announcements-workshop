@@ -20,11 +20,6 @@
 #   - Debian-based Linux distribution
 #   - Root privileges for system configuration
 #   
-#   Jumpbox Node:
-#   - RAM: 240MB minimum (for kubectl and management tools)
-#   - CPU: 1 core (sufficient for management tasks)
-#   - Disk: 10GB (for OS and management tools)
-#   
 #   Kubernetes Nodes:
 #   - RAM: 1900MB minimum (for kubelet, container runtime, pods)
 #   - CPU: 2 cores (required for control plane components)
@@ -99,7 +94,6 @@ check_prerequisites() {
     # Determine resource requirements based on node role
     # Control plane nodes need more resources for etcd, API server, and controllers
     # Worker nodes need resources for container runtime and pods
-    # Jumpbox needs minimal resources for management tools
     local required_ram_kb=$NODE_RAM_KB
     local required_disk_kb=$NODE_DISK_KB
     
