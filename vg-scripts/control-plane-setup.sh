@@ -57,10 +57,7 @@ certificateValidityPeriod: 8760h0m0s
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
 controlPlaneEndpoint: 192.168.56.20:6443
-controllerManager:
-  extraArgs:
-  - name: node-cidr-mask-size
-    value: "24"
+controllerManager: {}
 dns: {}
 encryptionAlgorithm: RSA-2048
 etcd:
