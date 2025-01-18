@@ -76,7 +76,7 @@ kind: ClusterConfiguration
 kubernetesVersion: v1.32.1
 networking:
   dnsDomain: cluster.local
-  podSubnet: 10.200.0.0/16
+  podSubnet: 10.200.0.0/24
   serviceSubnet: 10.96.0.0/16
 proxy: {}
 scheduler:
