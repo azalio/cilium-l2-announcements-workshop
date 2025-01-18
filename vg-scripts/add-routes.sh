@@ -15,5 +15,10 @@ if [ "$IFACE" = "eth1" ]; then
             ip route add 10.200.0.0/24 via 192.168.56.20 || true
             ip route add 10.200.1.0/24 via 192.168.56.50 || true
             ;;
+        "jumpbox")
+            ip route add 10.200.0.0/24 via 192.168.56.20 || true
+            ip route add 10.200.1.0/24 via 192.168.56.50 || true
+            ip route add 10.200.2.0/24 via 192.168.56.60 || true
+            ;;
     esac
 fi
