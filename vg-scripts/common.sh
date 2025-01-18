@@ -169,8 +169,15 @@ PACKAGES=(
     cri-tools
 )
 
-if ! apt-get install -y "${PACKAGES[@]}"; then
+if ! DEBIAN_FRONTEND=noninteractive apt-get install -y "${PACKAGES[@]}"; then
     log "ERROR: Failed to install required packages"
+    exit $E_PACKAGE
+fi
+
+# Установка openssh-server отдельно с отложенным перезапуском
+log "Installing openssh-server..."
+if ! DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server; then
+    log "ERROR: Failed to install openssh-server"
     exit $E_PACKAGE
 fi
 
