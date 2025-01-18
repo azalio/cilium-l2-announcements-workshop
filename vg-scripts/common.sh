@@ -125,6 +125,7 @@ PACKAGES=(
     conntrack
     ipset
     bridge-utils
+    tcpdump
     kubelet=1.32.1-1.1
     kubeadm=1.32.1-1.1
     kubectl=1.32.1-1.1
