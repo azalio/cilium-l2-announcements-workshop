@@ -137,8 +137,8 @@ if ! apt-get update -y; then
 fi
 
 # Add Kubernetes repo
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
 
 PACKAGES=(
     software-properties-common
@@ -160,9 +160,9 @@ PACKAGES=(
     conntrack
     ipset
     bridge-utils
-    kubelet=1.32.1-1.1
-    kubeadm=1.32.1-1.1
-    kubectl=1.32.1-1.1
+    kubelet=1.28.3-1.1
+    kubeadm=1.28.3-1.1
+    kubectl=1.28.3-1.1
     containerd
     cri-tools
 )
