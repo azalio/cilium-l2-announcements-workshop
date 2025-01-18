@@ -116,6 +116,20 @@ rm get_helm.sh
 
 log "Helm installed successfully"
 
+# Установка утилиты cilium
+log "Installing cilium CLI..."
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+curl -L --remote-name https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-arm64.tar.gz
+tar xzvf cilium-linux-arm64.tar.gz -C /usr/local/bin
+rm cilium-linux-arm64.tar.gz
+log "Cilium CLI installed successfully"
+
+# Проверка установки cilium CLI
+if ! cilium version; then
+  log "ERROR: Failed to install cilium CLI"
+  exit 1
+fi
+
 # Install Cilium CNI
 helm repo add cilium https://helm.cilium.io/
 helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-system \
