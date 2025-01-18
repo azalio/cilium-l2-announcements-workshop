@@ -107,6 +107,6 @@ rm get_helm.sh
 log "Helm installed successfully"
 
 # Configure podCIDR for the server node
-kubectl patch node server --type merge -p '{"spec":{"podCIDR":"10.200.0.0/24"}}'
+kubectl --kubeconfig=/etc/kubernetes/kubelet.conf patch node server --type merge -p '{"spec":{"podCIDR":"10.200.0.0/24"}}'
 
 log "Configured podCIDR for server node"
