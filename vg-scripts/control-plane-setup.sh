@@ -141,6 +141,8 @@ helm upgrade --install cilium cilium/cilium --version 1.16.5 --namespace kube-sy
   --set operator.replicas=1 \
   --set routingMode=native \
   --set ipv4NativeRoutingCIDR=10.200.0.0/22 \
-  --set endpointRoutes.enabled=true
+  --set endpointRoutes.enabled=true \
+  --set ingressController.enabled=true \
+  --set ingressController.loadbalancerMode=dedicated 
 
 log "Cilium installed successfully"
