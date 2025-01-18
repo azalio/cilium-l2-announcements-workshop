@@ -374,15 +374,15 @@ elif [[ "${NODE_TYPE}" == "node-1" ]]; then
     ip route add 10.200.1.0/24 via 192.168.56.50
 fi
 
-# Сохранение маршрутов в конфигурацию сети
-cat <<EOF > /etc/network/interfaces.d/90-pod-routes
-# Pod network routes
-up ip route add 10.200.0.0/24 via 192.168.56.20 || true
-up ip route add 10.200.1.0/24 via 192.168.56.50 || true
-up ip route add 10.200.2.0/24 via 192.168.56.60 || true
-EOF
+# # Сохранение маршрутов в конфигурацию сети
+# cat <<EOF > /etc/network/interfaces.d/90-pod-routes
+# # Pod network routes
+# up ip route add 10.200.0.0/24 via 192.168.56.20 || true
+# up ip route add 10.200.1.0/24 via 192.168.56.50 || true
+# up ip route add 10.200.2.0/24 via 192.168.56.60 || true
+# EOF
 
-log "Pod network routes configured successfully"
+# log "Pod network routes configured successfully"
 
 log "Configuring crictl for containerd..."
 
