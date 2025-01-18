@@ -2,7 +2,7 @@
 
 # Ensure packages are up to date
 apt-get update
-apt-get upgrade -y
+# apt-get upgrade -y
 
 # Инициализация кластера (без kube-proxy)
 kubeadm init --skip-phases=addon/kube-proxy
