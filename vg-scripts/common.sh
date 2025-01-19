@@ -135,6 +135,7 @@ PACKAGES=(
     kubectl=1.32.1-1.1
     containerd
     cri-tools
+    arping
 )
 
 if ! DEBIAN_FRONTEND=noninteractive apt-get install -y "${PACKAGES[@]}"; then
@@ -306,11 +307,11 @@ log "Configuring firewall rules..."
 sysctl -w net.ipv4.ip_forward=1
 
 # Enable ARP proxying for eth1
-log "Enabling ARP proxying on eth1..."
-echo 1 > /proc/sys/net/ipv4/conf/eth1/proxy_arp
-echo "echo 1 > /proc/sys/net/ipv4/conf/eth1/proxy_arp" >> /etc/rc.local
-chmod +x /etc/rc.local
-log "ARP proxying enabled on eth1"
+# log "Enabling ARP proxying on eth1..."
+# echo 1 > /proc/sys/net/ipv4/conf/eth1/proxy_arp
+# echo "echo 1 > /proc/sys/net/ipv4/conf/eth1/proxy_arp" >> /etc/rc.local
+# chmod +x /etc/rc.local
+# log "ARP proxying enabled on eth1"
 
 log "Configuring containerd to use correct pause image and enable SystemdCgroup..."
 
