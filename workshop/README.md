@@ -951,6 +951,39 @@ ARP process called (pid=0)
 
 Это ARP запрос от устройства с MAC 00:0c:29:e4:f1:a4 и IP 192.168.56.10, которое ищет устройство с IP 10.0.10.0. В ответе ARP должно быть указано, какой MAC адрес соответствует IP 10.0.10.0.
 
+А вот ответ
+```c
+ bpftrace -e '
+ kprobe:arp_send_dst
+ {
+     printf("ARP send called (pid=%d)\n", pid);
+     printf("  type: %d\n", arg0);  // Тип ARP пакета (1 - Request, 2 - Reply)
+     printf("  ptype: %d\n", arg1); // Тип протокола (2054 для ARP)
+     printf("  dest_ip: %d.%d.%d.%d\n", (arg2 >> 0) & 0xff, (arg2 >> 8) & 0xff, (arg2 >> 16) & 0xff, (arg2 >> 24) & 0xff);
+     printf("  src_ip: %d.%d.%d.%d\n", (arg4 >> 0) & 0xff, (arg4 >> 8) & 0xff, (arg4 >> 16) & 0xff, (arg4 >> 24) & 0xff);
+     printf("  dest_hw: %02x:%02x:%02x:%02x:%02x:%02x\n", *(uint8*)(arg5 + 0), *(uint8*)(arg5 + 1), *(uint8*)(arg5 + 2), *(uint8*)(arg5 + 3),
+ *(uint8*)(arg5 + 4), *(uint8*)(arg5 + 5)); // MAC dst
+     printf("  src_hw: %02x:%02x:%02x:%02x:%02x:%02x\n", *(uint8*)(arg6 + 0), *(uint8*)(arg6 + 1), *(uint8*)(arg6 + 2), *(uint8*)(arg6 + 3),
+ *(uint8*)(arg6 + 4), *(uint8*)(arg6 + 5)); // MAC src
+     printf("  target_hw: %02x:%02x:%02x:%02x:%02x:%02x\n", *(uint8*)(arg7 + 0), *(uint8*)(arg7 + 1), *(uint8*)(arg7 + 2), *(uint8*)(arg7 + 3),
+ *(uint8*)(arg7 + 4), *(uint8*)(arg7 + 5)); // MAC target
+ }
+ '
+ ```
+
+ ```bash
+ ARP send called (pid=0)
+   type: 2                     // Тип ARP пакета: 2 (ARP Reply, ответ)
+   ptype: 2054                 // Тип протокола: 2054 (0x0806, ARP)
+   dest_ip: 192.168.56.10      // IP назначения (устройство, которое запросило ARP, например, jumpbox)
+   src_ip: 10.0.10.0           // IP отправителя (устройство, отправляющее ARP Reply, например, node-1)
+   dest_hw: 00:0c:29:e4:f1:a4  // MAC назначения (устройство, которое запросило ARP, например, jumpbox)
+   src_hw: 00:0c:29:0d:b7:76   // MAC отправителя (устройство, отправляющее ARP Reply, например, node-1)
+   target_hw: 00:0c:29:e4:f1:a4 // MAC цели (обычно совпадает с dest_hw для ARP Reply)
+```
+
+
+
 Если включить arp_proxy на всех нодах - то будут отвечать все и так же будут отдавать сайт.
 
 ### Различия кешированных и не кешированных мап в cilium <a name="map-cache-or-not-cache"></a>
