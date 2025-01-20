@@ -304,6 +304,8 @@ nginx   ClusterIP   10.96.79.80   <none>        80/TCP    89s
 
 ## Настройка Ingress <a name="настройка-ingress"></a>
 
+[Дока на сайте cilium](https://docs.cilium.io/en/stable/network/servicemesh/ingress/#kubernetes-ingress-support)
+
 Применяем манифест `ingress`
 
 ```bash
@@ -326,8 +328,10 @@ cilium-ingress-basic-ingress   LoadBalancer   10.96.156.194   <pending>     80:3
 
 ## Настройка LoadBalancer IP Pool <a name="настройка-loadbalancer-ip-pool"></a>
 
+Цилиум поддерживает назначение IP адреса на тип сервиса LoadBalancer.
+
 ### CiliumLoadBalancerIPPool
-https://docs.cilium.io/en/stable/network/lb-ipam/
+[Дока на сайте cilium](https://docs.cilium.io/en/stable/network/lb-ipam/)
 
 Создадим `CiliumLoadBalancerIPPool`
 ```bash
@@ -341,7 +345,8 @@ NAME                           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT
 cilium-ingress-basic-ingress   LoadBalancer   10.96.156.194   10.0.10.0     80:31017/TCP,443:32600/TCP   4m9s
 ```
 
-И он сразу работает 
+И он сразу работает. 
+(правда только с нод где запущен cilium)
 ```bash
 # curl 10.0.10.0
 <!DOCTYPE html>
