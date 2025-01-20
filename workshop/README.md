@@ -430,7 +430,6 @@ cilium-l2announce-default-cilium-ingress-basic-ingress   node-1   8m49s
 1. [Настройка L2 Policy](#настройка-l2-policy)
 2. [Lease захват](#lease-захват)
 3. [BPF Map для ARP](#bpf-map-для-arp)
-4. [Преобразование IP](#преобразование-ip)
 
 Основную информацию вы, конечно, можете прочитать в [документации](https://docs.cilium.io/en/latest/network/l2-announcements/), я же расскажу чуть-чуть побольше.
 
@@ -512,7 +511,6 @@ root@node-1:/home/cilium# ip link show | grep eth
     // ...
 3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
 ```
-### Преобразование IP <a name="преобразование-ip"></a>
 
 Что за число `655370`?
 
