@@ -10,14 +10,14 @@
  6. [Проблема с ARP](#проблема-с-arp)
  7. [Включение L2 анонсов](#включение-l2-анонсов)
  8. [Как это работает](#как-это-работает)
-    - [Настройка L2 Policy](#настройка-l2-policy)
-    - [Lease захват](#lease-захват)
-    - [BPF Map для ARP](#bpf-map-для-arp)
-    - [Преобразование IP](#преобразование-ip)
- 9. [Путь пакета](#путь-пакета)
+    * [Настройка L2 Policy](#настройка-l2-policy)
+    * [Lease захват](#lease-захват)
+    * [BPF Map для ARP](#bpf-map-для-arp)
+    * [Преобразование IP](#преобразование-ip)
+ 9. [Путь пакета](#путь-пакета)  
  10. [Дополнительные материалы](#дополнительные-материалы)  
-    - [Различия между cilium l2 анонсами и proxy_arp](#l2-anno-vs-proxy-arp)  
-    - [Различия кешированных и не кешированных мап в cilium](#map-cache-or-not-cache)
+     * [Различия между cilium l2 анонсами и proxy_arp](#l2-anno-vs-proxy-arp)  
+     * [Различия кешированных и не кешированных мап в cilium](#map-cache-or-not-cache)
 
 ## Введение <a name="введение"></a>
 В процессе работы по описыванию [опций цилиум-агента](https://docs.cilium.io/en/stable/cmdref/cilium-agent/) я наткнулся на опцию, которая мне была не ясна:
@@ -28,18 +28,67 @@
 В итоге получилась следующая статья.
 
 ## Настройка окружения <a name="настройка-окружения"></a>
-Для начала надо настроить окружение, воспользуйтесь [README.md](../README.md)
+Для начала надо настроить окружение, я его описал в [README.md](../README.md)
+
+Схема сети 
+```
+ +-------------------+       +-------------------+       +-------------------+       +-------------------+
+ |    Jumpbox        |       |     Server         |       |     Node-0        |       |     Node-1        |
+ | 192.168.56.10     |       | 192.168.56.20      |       | 192.168.56.50     |       | 192.168.56.60     |
+ | eth1: 00:0c:29:e4:f1:a4 | | eth1: 00:0c:29:34:87:0e | | eth1: 00:0c:29:e3:b1:b2 | | eth1: 00:0c:29:0d:b7:76 |
+ +--------+----------+       +--------+----------+       +--------+----------+       +--------+----------+
+          |                           |                           |                           |
+          |                           |                           |                           |
+          |                           |                           |                           |
+          v                           v                           v                           v
+ +-------------------+       +-------------------+       +-------------------+       +-------------------+
+ |   L2 домен        |<------+   L2 домен        +------>|   L2 домен        +------>|   L2 домен        |
+ | 192.168.56.0/24   |       | 192.168.56.0/24   |       | 192.168.56.0/24   |       | 192.168.56.0/24   |
+ +--------+----------+       +--------+----------+       +--------+----------+       +--------+----------+
+          |                           |                           |                           |
+          |                           |                           |                           |
+          |                           |                           |                           |
+          v                           v                           v                           v
+ +-------------------+       +-------------------+       +-------------------+       +-------------------+
+ |    Интернет       |       |    Интернет       |       |    Интернет       |       |    Интернет       |
+ | eth0: 172.16.65.x |       | eth0: 172.16.65.x |       | eth0: 172.16.65.x |       | eth0: 172.16.65.x |
+ +-------------------+       +-------------------+       +-------------------+       +-------------------+
+```
 
 <details>
   <summary>Немного о сетапе самого k8s && cilium</summary>
-У нас следующий расклад
 
-**jumpbox** - клиент не входящий в кластер kubernetes, но у него добавлен роут для LB
+Виртуалки подняты на mac arm с помощью Vagrant.
+
+**jumpbox - 192.168.56.10** - клиент не входящий в кластер kubernetes.
 ```bash
-ip ro add 10.0.10.0/24 dev eth1 scope link || true # Добавили сеть для LB на хост чтобы он слал ARP запросы в сеть.
+root@jumpbox:/home/vagrant# ip addr sh
+# ... тут был lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:e4:f1:9a brd ff:ff:ff:ff:ff:ff
+    altname enp2s0
+    altname ens160
+    inet 172.16.65.138/24 brd 172.16.65.255 scope global dynamic eth0
+       valid_lft 1440sec preferred_lft 1440sec
+    inet6 fe80::20c:29ff:fee4:f19a/64 scope link
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:e4:f1:a4 brd ff:ff:ff:ff:ff:ff
+    altname enp18s0
+    altname ens224
+    inet 192.168.56.10/24 brd 192.168.56.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:fee4:f1a4/64 scope link
+       valid_lft forever preferred_lft forever
+
+root@jumpbox:/home/vagrant# ip ro sh
+default via 172.16.65.2 dev eth0
+10.0.10.0/24 dev eth1 scope link # Добавили сеть для LB на хост чтобы он слал ARP запросы в сеть.
+172.16.65.0/24 dev eth0 proto kernel scope link src 172.16.65.138
+192.168.56.0/24 dev eth1 proto kernel scope link src 192.168.56.10
 ```
 
-**server** - control plane  
+**server - 192.168.56.20** - control plane  
 ```bash
 root@server:/home/vagrant# ip addr sh
 # ... тут был lo
@@ -93,8 +142,88 @@ default via 172.16.65.2 dev eth0
 192.168.56.0/24 dev eth1 proto kernel scope link src 192.168.56.20       
 ```
 
-**node-0** - нода k8s  
-**node-1** - нода k8s  
+**node-0 - 192.168.56.50** - нода k8s  
+```bash
+# ... тут был lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:e3:b1:a8 brd ff:ff:ff:ff:ff:ff
+    altname enp2s0
+    altname ens160
+    inet 172.16.65.135/24 brd 172.16.65.255 scope global dynamic eth0
+       valid_lft 1276sec preferred_lft 1276sec
+    inet6 fe80::20c:29ff:fee3:b1a8/64 scope link
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:e3:b1:b2 brd ff:ff:ff:ff:ff:ff
+    altname enp18s0
+    altname ens224
+    inet 192.168.56.50/24 brd 192.168.56.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:fee3:b1b2/64 scope link
+       valid_lft forever preferred_lft forever
+4: cilium_net@cilium_host: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether a6:6c:b0:e1:55:ab brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::a46c:b0ff:fee1:55ab/64 scope link
+       valid_lft forever preferred_lft forever
+5: cilium_host@cilium_net: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 0a:02:5c:7d:dc:52 brd ff:ff:ff:ff:ff:ff
+    inet 10.200.1.54/32 scope global cilium_host
+       valid_lft forever preferred_lft forever
+    inet6 fe80::802:5cff:fe7d:dc52/64 scope link
+       valid_lft forever preferred_lft forever
+7: lxc_health@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether ca:de:80:07:5b:44 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::c8de:80ff:fe07:5b44/64 scope link
+       valid_lft forever preferred_lft forever
+
+root@node-0:/home/vagrant# ip ro sh
+default via 172.16.65.2 dev eth0
+10.200.0.0/24 via 192.168.56.20 dev eth1
+10.200.1.177 dev lxc_health proto kernel scope link
+10.200.2.0/24 via 192.168.56.60 dev eth1
+172.16.65.0/24 dev eth0 proto kernel scope link src 172.16.65.135
+192.168.56.0/24 dev eth1 proto kernel scope link src 192.168.56.50
+```
+
+**node-1 - 192.168.56.60** - нода k8s  
+```bash
+root@node-1:/home/vagrant# ip addr sh
+# ... тут был lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:0d:b7:6c brd ff:ff:ff:ff:ff:ff
+    altname enp2s0
+    altname ens160
+    inet 172.16.65.136/24 brd 172.16.65.255 scope global dynamic eth0
+       valid_lft 1645sec preferred_lft 1645sec
+    inet6 fe80::20c:29ff:fe0d:b76c/64 scope link
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:0d:b7:76 brd ff:ff:ff:ff:ff:ff
+    altname enp18s0
+    altname ens224
+    inet 192.168.56.60/24 brd 192.168.56.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:fe0d:b776/64 scope link
+       valid_lft forever preferred_lft forever
+4: cilium_net@cilium_host: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether e2:07:7f:e1:46:86 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::e007:7fff:fee1:4686/64 scope link
+       valid_lft forever preferred_lft forever
+5: cilium_host@cilium_net: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 4a:1f:77:70:76:2b brd ff:ff:ff:ff:ff:ff
+    inet 10.200.2.17/32 scope global cilium_host
+       valid_lft forever preferred_lft forever
+    inet6 fe80::481f:77ff:fe70:762b/64 scope link
+       valid_lft forever preferred_lft forever
+7: lxc_health@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether ae:7a:16:ce:0a:dc brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::ac7a:16ff:fece:adc/64 scope link
+       valid_lft forever preferred_lft forever
+9: lxc595b845a7747@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 7e:44:95:5c:5f:9d brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::7c44:95ff:fe5c:5f9d/64 scope link
+       valid_lft forever preferred_lft forever
+```
 
 Cilium с нативным роутингом. Туннели не используются. Версия v1.16.5.
 
@@ -297,6 +426,11 @@ cilium-l2announce-default-cilium-ingress-basic-ingress   node-1   8m49s
 ## Как это работает <a name="как-это-работает"></a>
 
 // TODO Картинка с девочкой в проститутки (сделать мем)
+
+### Настройка L2 Policy <a name="настройка-l2-policy"></a>
+### Lease захват <a name="lease-захват"></a>
+### BPF Map для ARP <a name="bpf-map-для-arp"></a>
+### Преобразование IP <a name="преобразование-ip"></a>
 
 Основную информацию вы, конечно, можете прочитать в [документации](https://docs.cilium.io/en/latest/network/l2-announcements/), я же расскажу чуть-чуть побольше.
 
