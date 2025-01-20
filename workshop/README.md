@@ -427,10 +427,10 @@ cilium-l2announce-default-cilium-ingress-basic-ingress   node-1   8m49s
 
 // TODO Картинка с девочкой в проститутки (сделать мем)
 
-### Настройка L2 Policy <a name="настройка-l2-policy"></a>
-### Lease захват <a name="lease-захват"></a>
-### BPF Map для ARP <a name="bpf-map-для-arp"></a>
-### Преобразование IP <a name="преобразование-ip"></a>
+1. [Настройка L2 Policy](#настройка-l2-policy)
+2. [Lease захват](#lease-захват)
+3. [BPF Map для ARP](#bpf-map-для-arp)
+4. [Преобразование IP](#преобразование-ip)
 
 Основную информацию вы, конечно, можете прочитать в [документации](https://docs.cilium.io/en/latest/network/l2-announcements/), я же расскажу чуть-чуть побольше.
 
