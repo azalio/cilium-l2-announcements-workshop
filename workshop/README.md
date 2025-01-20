@@ -828,8 +828,125 @@ BPF_F_INGRESS			= (1ULL << 0),
 ## Дополнительные материалы <a name="дополнительные-материалы"></a>
 
 ### Различия между cilium l2 анонсами и proxy_arp <a name="l2-anno-vs-proxy-arp"></a>
-Вопрос на засыпку: а что будет если я отключу l2 анонсы, но включу proxy_arp?
-// TODO ^
+*Вопрос*: а что будет если я отключу l2 анонсы, но включу [proxy_arp](http://linux-ip.net/html/ether-arp-proxy.html) на нодах кубера?  
+*Ответ*: Ядро само начнет отвечать на `arp` запросы и все будет продолжать работать.
+
+Отключили ARP анонсы.
+
+```bash
+root@server:/home/vagrant# kubectl delete -f workshop/l2.yaml
+ciliuml2announcementpolicy.cilium.io "policy1" deleted
+```
+ARP перестал отвечать на jumphost
+root@jumpbox:/home/vagrant# arping  10.0.10.0
+ARPING 10.0.10.0
+60 bytes from 00:0c:29:e3:b1:a8 (10.0.10.0): index=0 time=257.448 usec
+60 bytes from 00:0c:29:e3:b1:a8 (10.0.10.0): index=1 time=377.882 usec
+
+Timeout
+Timeout
+Timeout
+```
+
+Включили arp_proxy на **node-1**
+```bash
+root@node-1:/home/vagrant# sysctl -w net.ipv4.conf.eth1.proxy_arp=1
+net.ipv4.conf.eth1.proxy_arp = 1
+```
+
+Все заработало
+```bash
+root@jumpbox:/home/vagrant# arping -I eth1 10.0.10.0
+ARPING 10.0.10.0
+Timeout
+Timeout
+Timeout
+Timeout
+60 bytes from 00:0c:29:0d:b7:76 (10.0.10.0): index=0 time=449.655 msec
+60 bytes from 00:0c:29:0d:b7:76 (10.0.10.0): index=1 time=792.268 msec
+60 bytes from 00:0c:29:0d:b7:76 (10.0.10.0): index=2 time=152.025 msec
+
+root@jumpbox:/home/vagrant# curl 10.0.10.0
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+// ...
+```
+
+Чтобы убедиться что отвечает само ядро можно подцепиться к функции [arp_process](https://elixir.bootlin.com/linux/v6.1.20/source/net/ipv4/arp.c#L698) в линукс ядре
+
+```c
+/*
+ *	Process an arp request.
+ */
+
+static int arp_process(struct net *net, struct sock *sk, struct sk_buff *skb)
+// ...
+```
+
+Напишем bpf программу
+```c
+root@node-1:/home/vagrant#  bpftrace -e '
+ kprobe:arp_process
+ {
+     printf("ARP process called (pid=%d)\n", pid);
+     printf("  net: %lx\n", arg0);
+     printf("  sock: %lx\n", arg1);
+     printf("  sk_buff: %lx\n", arg2);
+
+     // Доступ к данным из sk_buff
+     $skb = (struct sk_buff *)arg2;
+     printf("  skb->len: %d\n", $skb->len);
+     printf("  skb->data: %lx\n", $skb->data);
+
+     // Выводим первые 64 байт данных
+     printf("  data: ");
+     $data = (uint8*)$skb->data;
+     unroll(64) {
+         printf("%02x ", *$data);
+         $data++;
+     }
+     printf("\n");
+ }
+ '
+```
+
+Пингуем с **jumphost** - 192.168.56.10
+```bash
+root@jumpbox:/home/vagrant# arping -c 1 -I eth1 10.0.10.0
+ARPING 10.0.10.0
+60 bytes from 00:0c:29:0d:b7:76 (10.0.10.0): index=0 time=276.063 msec
+```
+
+Видим что ядро обрабатывает пакет
+```bash
+ARP process called (pid=0)
+  net: ffff80000a19ff00
+  sock: 0
+  sk_buff: ffff000006981000
+  skb->len: 46
+  skb->data: ffff00003b42e04e
+  data: 00 01 08 00 06 04 00 01 00 0c 29 e4 f1 a4 c0 a8 38 0a 00 00 00 00 00 00 0a 00 0a 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+```
+
+Давайте расшифруем что получилось.  
+
+ 1 Заголовок ARP [хорошее описание](https://www.practicalnetworking.net/series/arp/traditional-arp/):  
+    • 00 01 — Hardware type (Ethernet).  
+    • 08 00 — Protocol type (IPv4).  
+    • 06 — MAC address length (6 байт).  
+    • 04 — IP address length (4 байта).  
+    • 00 01 — Operation (ARP request).  
+ 2 Данные ARP:  
+    • 00 0c 29 e4 f1 a4 — Sender MAC: 00:0c:29:e4:f1:a4.  
+    • c0 a8 38 0a — Sender IP: 192.168.56.10.  
+    • 00 00 00 00 00 00 — Target MAC: 00:00:00:00:00:00 (запрашивается).  
+    • 0a 00 0a 00 — Target IP: 10.0.10.0.  
+
+Это ARP запрос от устройства с MAC 00:0c:29:e4:f1:a4 и IP 192.168.56.10, которое ищет устройство с IP 10.0.10.0. В ответе ARP должно быть указано, какой MAC адрес соответствует IP 10.0.10.0.
+
+Если включить arp_proxy на всех нодах - то будут отвечать все и так же будут отдавать сайт.
 
 ### Различия кешированных и не кешированных мап в cilium <a name="map-cache-or-not-cache"></a>
 // TODO
