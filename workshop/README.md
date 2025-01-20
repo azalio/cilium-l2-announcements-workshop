@@ -15,8 +15,9 @@
     - [BPF Map для ARP](#bpf-map-для-arp)
     - [Преобразование IP](#преобразование-ip)
  9. [Путь пакета](#путь-пакета)
- 10. [Вопросы и ответы](#вопросы-и-ответы)
- 11. [Дополнительные материалы](#дополнительные-материалы)
+ 10. [Дополнительные материалы](#дополнительные-материалы)  
+    - [Различия между cilium l2 анонсами и proxy_arp](#l2-anno-vs-proxy-arp)  
+    - [Различия кешированных и не кешированных мап в cilium](#map-cache-or-not-cache)
 
 ## Введение <a name="введение"></a>
 В процессе работы по описыванию [опций цилиум-агента](https://docs.cilium.io/en/stable/cmdref/cilium-agent/) я наткнулся на опцию, которая мне была не ясна:
@@ -35,8 +36,6 @@
 
 **jumpbox** - клиент не входящий в кластер kubernetes, но у него добавлен роут для LB
 ```bash
-
-
 ip ro add 10.0.10.0/24 dev eth1 scope link || true # Добавили сеть для LB на хост чтобы он слал ARP запросы в сеть.
 ```
 
@@ -135,7 +134,7 @@ deployment.apps/nginx created
 # kubectl apply -f workshop/nginx-service.yaml
 service/nginx created
 ```
-### Шаг 3. Проверка работы
+### Шаг 2. Проверка работы
 Убедимся что сервис работает
 ```bash
 # kubectl get pod -o wide
@@ -160,7 +159,9 @@ nginx   ClusterIP   10.96.79.80   <none>        80/TCP    89s
 <title>Welcome to nginx!</title>
 ...
 ```
-[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел) | [Далее →](#следующий-раздел)
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+## Настройка Ingress <a name="настройка-ingress"></a>
 
 Применяем манифест `ingress`
 
@@ -180,9 +181,11 @@ cilium-ingress-basic-ingress   LoadBalancer   10.96.156.194   <pending>     80:3
 ```
 
 Как вы видите в поле `EXTERNAL-IP` статус <pending> потому что ему пока неоткуда взяться.
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
 
+## Настройка LoadBalancer IP Pool <a name="настройка-loadbalancer-ip-pool"></a>
 
-## CiliumLoadBalancerIPPool
+### CiliumLoadBalancerIPPool
 https://docs.cilium.io/en/stable/network/lb-ipam/
 
 Создадим `CiliumLoadBalancerIPPool`
@@ -206,6 +209,9 @@ cilium-ingress-basic-ingress   LoadBalancer   10.96.156.194   10.0.10.0     80:3
 <title>Welcome to nginx!</title>
 ...
 ```
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+## Проблема с ARP <a name="проблема-с-arp"></a>
 
 Зайдем в другой консоли на наш клиент `jumpbox` и убедимся что сайт открывается.
 ```bash
@@ -235,6 +241,9 @@ root@jumpbox:/home/vagrant# arp -n 10.0.10.0
 Address                  HWtype  HWaddress           Flags Mask            Iface
 10.0.10.0                        (incomplete)                              eth1
 ```
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+## Включение L2 анонсов <a name="включение-l2-анонсов"></a>
 
 Давайте включим ARP анонсы.
 
@@ -283,10 +292,13 @@ root@node-1:/home/vagrant# ip addr sh | grep -1 00:0c:29:0d:b7:76
 NAME                                                     HOLDER   AGE
 cilium-l2announce-default-cilium-ingress-basic-ingress   node-1   8m49s
 ```
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
 
-Но как это все работает?
+## Как это работает <a name="как-это-работает"></a>
 
 Основную информацию вы, конечно, можете прочитать в [документации](https://docs.cilium.io/en/latest/network/l2-announcements/), я же расскажу чуть-чуть побольше.
+
+### Настройка L2 Policy <a name="настройка-l2-policy"></a>
 
 <details>
   <summary>1. Настраиваем policy включающие l2 анонсы</summary>
@@ -308,6 +320,8 @@ spec:
 ```
 </details>
 
+### Lease захват <a name="lease-захват"></a>
+
 <details>
 <summary> 2. Цилиум захватывает лизу </summary>
 
@@ -317,6 +331,8 @@ cilium-l2announce-default-cilium-ingress-basic-ingress   node-1                 
 cilium-l2announce-kube-system-cilium-ingress             node-0                                                                      16m
 ```
 </details>
+
+### BPF Map для ARP <a name="bpf-map-для-arp"></a>
 
 <details>
 <summary> 3. На ноде создается bpf map, отвечающая за ARP ответы по анонсируемому IP</summary>
@@ -360,6 +376,7 @@ root@node-1:/home/cilium# ip link show | grep eth
     // ...
 3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
 ```
+### Преобразование IP <a name="преобразование-ip"></a>
 
 Что за число `655370`?
 
@@ -395,6 +412,12 @@ print(ip)
 `jumpbox` - посылает широковещательный запрос с вопросом кто отвечает за 10.0.10.0.
 `все сервера l2 домена` - получают этот запрос.
 `node-1` - отвечает на этот запрос с мак адресом интерфейса, который принял ARP запрос.
+
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+## Путь пакета <a name="путь-пакета"></a>
+
+//TODO картинка путь самурая
 
 А как node-1 **ответила** на `arp` запрос?
 
@@ -659,9 +682,16 @@ BPF_F_INGRESS			= (1ULL << 0),
  +-------------------+
  ```
 
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+## Дополнительные материалы <a name="дополнительные-материалы"></a>
+
+### Различия между cilium l2 анонсами и proxy_arp <a name="l2-anno-vs-proxy-arp"></a>
 Вопрос на засыпку: а что будет если я отключу l2 анонсы, но включу proxy_arp?
 // TODO ^
 
-Для тех кто добрался. 
-Различия кешированных и не кешированных мап в cilium.
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
+
+### Различия кешированных и не кешированных мап в cilium <a name="map-cache-or-not-cache"></a>
 // TODO
+[↑ К оглавлению](#оглавление) | [← Назад](#предыдущий-раздел)
