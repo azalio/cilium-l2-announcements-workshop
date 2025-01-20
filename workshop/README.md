@@ -837,7 +837,8 @@ BPF_F_INGRESS			= (1ULL << 0),
 root@server:/home/vagrant# kubectl delete -f workshop/l2.yaml
 ciliuml2announcementpolicy.cilium.io "policy1" deleted
 ```
-ARP перестал отвечать на jumphost
+ARP перестал отвечать на jumphost  
+```bash
 root@jumpbox:/home/vagrant# arping  10.0.10.0
 ARPING 10.0.10.0
 60 bytes from 00:0c:29:e3:b1:a8 (10.0.10.0): index=0 time=257.448 usec
@@ -932,17 +933,21 @@ ARP process called (pid=0)
 
 Давайте расшифруем что получилось.  
 
- 1 Заголовок ARP [хорошее описание](https://www.practicalnetworking.net/series/arp/traditional-arp/):  
+ 1 Заголовок ARP ([хорошее описание](https://www.practicalnetworking.net/series/arp/traditional-arp/)):  
+ ```
     • 00 01 — Hardware type (Ethernet).  
     • 08 00 — Protocol type (IPv4).  
     • 06 — MAC address length (6 байт).  
     • 04 — IP address length (4 байта).  
     • 00 01 — Operation (ARP request).  
+ ```   
  2 Данные ARP:  
+ ```
     • 00 0c 29 e4 f1 a4 — Sender MAC: 00:0c:29:e4:f1:a4.  
     • c0 a8 38 0a — Sender IP: 192.168.56.10.  
     • 00 00 00 00 00 00 — Target MAC: 00:00:00:00:00:00 (запрашивается).  
     • 0a 00 0a 00 — Target IP: 10.0.10.0.  
+```
 
 Это ARP запрос от устройства с MAC 00:0c:29:e4:f1:a4 и IP 192.168.56.10, которое ищет устройство с IP 10.0.10.0. В ответе ARP должно быть указано, какой MAC адрес соответствует IP 10.0.10.0.
 
