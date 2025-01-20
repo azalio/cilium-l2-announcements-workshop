@@ -642,7 +642,7 @@ do_netdev(struct __ctx_buff *ctx, __u16 proto, const bool from_host)
 // ...
 ```
 
-Заметьте, если анонсы не включены - то пакет просто пропустится `CTX_ACT_OK` и не будет обработан, иначе будет вызвана функция `handle_l2_announcement`.
+Заметьте, если анонсы не включены - то пакет просто пропустится (`CTX_ACT_OK`) и не будет обработан, иначе будет вызвана функция `handle_l2_announcement`.
 
 [`handle_l2_announcement`](https://github.com/cilium/cilium/blob/v1.16.5/bpf/bpf_host.c#L1032)
 ```c
@@ -652,7 +652,7 @@ static __always_inline int handle_l2_announcement(struct __ctx_buff *ctx)
 ```
 
 В которой будет:
-1. Проверено что <s>брат</s> цилиум-агент жив (опция `agent-liveness-update-interval`)
+1. Проверено что <s>брат</s> цилиум-агент жив (опция `agent-liveness-update-interval` из-за которой весь этот сыр-бор!)
 ```c
 // ...
 	__u32 index = RUNTIME_CONFIG_AGENT_LIVENESS;
@@ -671,7 +671,7 @@ static __always_inline int handle_l2_announcement(struct __ctx_buff *ctx)
 // ...
 ```
 
-Как вы думаете где хранится значение `time`?
+Как вы думаете где хранится значение `time`?  
 Конечно! В еще одной bpf мапе!
 
 ```bash
@@ -695,7 +695,8 @@ AgentLiveness   53302401940736 # monolithic time https://docs.redhat.com/en/docu
 	if (!stats)
 		return CTX_ACT_OK;
 ```
-Вот эта мапка
+
+Вот эта мапка!
 ```bash
 root@node-1:/home/cilium# bpftool map dump pinned /sys/fs/bpf/tc/globals/cilium_l2_responder_v4
 [{
@@ -718,12 +719,18 @@ root@node-1:/home/cilium# bpftool map dump pinned /sys/fs/bpf/tc/globals/cilium_
 ]
 ```
 
+А на **node-0** будет в это время так:
+```bash
+root@node-0:/home/cilium# bpftool map dump pinned /sys/fs/bpf/tc/globals/cilium_l2_responder_v4
+[]
+```
+
 4. Вызовется `arp_respond`
 ```c
 ret = arp_respond(ctx, &mac, tip, &smac, sip, 0);
 ```
 
-[`arp_respond`](https://github.com/cilium/cilium/blob/main/bpf/lib/arp.h#L75) вызовет `arp_prepare_response` и отправит `ctx_redirect` пакет на интерфейс.
+[`arp_respond`](https://github.com/cilium/cilium/blob/main/bpf/lib/arp.h#L75) вызовет [`arp_prepare_response`](https://github.com/cilium/cilium/blob/main/bpf/lib/arp.h#L32) и отправит `ctx_redirect` пакет на интерфейс.
 ```c
 static __always_inline int
 arp_respond(struct __ctx_buff *ctx, union macaddr *smac, __be32 sip,
@@ -745,7 +752,7 @@ error:
 
 [`ctx_redirect`](https://github.com/cilium/cilium/blob/main/bpf/include/bpf/ctx/skb.h#L89) в итоге вызовет функцию `bpf_redirect` о которой хорошо написано [тут](http://arthurchiao.art/blog/differentiate-bpf-redirects/)
 
-Заметили `direction` = 0?
+Заметили `direction` = 0?  
 Это определяет направление пакета (ingress или egress). В коментариях к функции bpf_redirect есть пояснение
 
 >Except for XDP, both ingress and egress interfaces can be used
