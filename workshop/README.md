@@ -951,7 +951,7 @@ ARP process called (pid=0)
 
 Это ARP запрос от устройства с MAC 00:0c:29:e4:f1:a4 и IP 192.168.56.10, которое ищет устройство с IP 10.0.10.0. В ответе ARP должно быть указано, какой MAC адрес соответствует IP 10.0.10.0.
 
-А вот ответ
+А вот ответ ([arp_send_dst](https://elixir.bootlin.com/linux/v6.1.20/source/net/ipv4/arp.c#L301))
 ```c
  bpftrace -e '
  kprobe:arp_send_dst
@@ -981,8 +981,6 @@ ARP process called (pid=0)
    src_hw: 00:0c:29:0d:b7:76   // MAC отправителя (устройство, отправляющее ARP Reply, например, node-1)
    target_hw: 00:0c:29:e4:f1:a4 // MAC цели (обычно совпадает с dest_hw для ARP Reply)
 ```
-
-
 
 Если включить arp_proxy на всех нодах - то будут отвечать все и так же будут отдавать сайт.
 
