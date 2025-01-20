@@ -33,14 +33,69 @@
   <summary>Немного о сетапе самого k8s && cilium</summary>
 У нас следующий расклад
 
-jumpbox - клиент не входящий в кластер kubernetes, но у него добавлен роут для LB
+**jumpbox** - клиент не входящий в кластер kubernetes, но у него добавлен роут для LB
 ```bash
+
+
 ip ro add 10.0.10.0/24 dev eth1 scope link || true # Добавили сеть для LB на хост чтобы он слал ARP запросы в сеть.
 ```
 
-server - control plane
-node-0 - нода k8s
-node-1 - нода k8s
+**server** - control plane  
+```bash
+root@server:/home/vagrant# ip addr sh
+# ... тут был lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:0c:29:34:87:04 brd ff:ff:ff:ff:ff:ff
+    altname enp2s0
+    altname ens160
+    inet 172.16.65.134/24 brd 172.16.65.255 scope global dynamic eth0
+       valid_lft 1393sec preferred_lft 1393sec
+    inet6 fe80::20c:29ff:fe34:8704/64 scope link
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:34:87:0e brd ff:ff:ff:ff:ff:ff
+    altname enp18s0
+    altname ens224
+    inet 192.168.56.20/24 brd 192.168.56.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:fe34:870e/64 scope link
+       valid_lft forever preferred_lft forever
+4: cilium_net@cilium_host: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 5a:52:88:29:22:6d brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::5852:88ff:fe29:226d/64 scope link
+       valid_lft forever preferred_lft forever
+5: cilium_host@cilium_net: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether b6:78:3c:93:b8:45 brd ff:ff:ff:ff:ff:ff
+    inet 10.200.0.7/32 scope global cilium_host
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b478:3cff:fe93:b845/64 scope link
+       valid_lft forever preferred_lft forever
+7: lxc_health@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 9a:dd:c2:3b:95:10 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::98dd:c2ff:fe3b:9510/64 scope link
+       valid_lft forever preferred_lft forever
+9: lxcad113d8e8e91@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether ba:3b:e2:45:f7:6e brd ff:ff:ff:ff:ff:ff link-netns cni-5c70ca6a-fc04-03a7-566f-6f64ae28bac2
+    inet6 fe80::b83b:e2ff:fe45:f76e/64 scope link
+       valid_lft forever preferred_lft forever
+11: lxcf9c6a3bae21b@if10: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 5e:d5:84:bb:4e:79 brd ff:ff:ff:ff:ff:ff link-netns cni-c1fbcc80-4c2c-8f05-9d82-c7191c850da7
+    inet6 fe80::5cd5:84ff:febb:4e79/64 scope link
+       valid_lft forever preferred_lft forever
+
+root@server:/home/vagrant# ip ro sh
+default via 172.16.65.2 dev eth0
+10.200.0.52 dev lxcad113d8e8e91 proto kernel scope link
+10.200.0.141 dev lxcf9c6a3bae21b proto kernel scope link
+10.200.0.142 dev lxc_health proto kernel scope link
+10.200.1.0/24 via 192.168.56.50 dev eth1 # роут для подовых сетей
+10.200.2.0/24 via 192.168.56.60 dev eth1 # роут для подовых сетей
+172.16.65.0/24 dev eth0 proto kernel scope link src 172.16.65.134
+192.168.56.0/24 dev eth1 proto kernel scope link src 192.168.56.20       
+```
+
+**node-0** - нода k8s  
+**node-1** - нода k8s  
 
 Cilium с нативным роутингом. Туннели не используются. Версия v1.16.5.
 
