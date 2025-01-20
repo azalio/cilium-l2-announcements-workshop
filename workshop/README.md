@@ -386,7 +386,7 @@ Address                  HWtype  HWaddress           Flags Mask            Iface
 
 ## Включение L2 анонсов <a name="включение-l2-анонсов"></a>
 
-Давайте включим ARP анонсы.
+Давайте включим [ARP анонсы](https://docs.cilium.io/en/stable/network/l2-announcements/).
 
 ```
   +-------------------+       +-------------------+       +-------------------+
@@ -453,7 +453,7 @@ cilium-l2announce-default-cilium-ingress-basic-ingress   node-1   8m49s
 
 ## Как это работает <a name="как-это-работает"></a>
 
-// TODO Картинка с девочкой в проститутки (сделать мем)
+![cilium шмилиум](img/701bf21935e6ae6ccb33d6808622c891.jpg)
 
 1. [Настройка L2 Policy](#настройка-l2-policy)
 2. [Lease захват](#lease-захват)
@@ -579,7 +579,7 @@ print(ip)
 
 ## Путь пакета <a name="путь-пакета"></a>
 
-//TODO картинка путь самурая
+![у самурая нет цели](img/samurai.png)
 
 А как node-1 **ответила** на `arp` запрос?
 
