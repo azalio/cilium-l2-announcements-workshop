@@ -2,6 +2,8 @@
 
 Этот проект предоставляет автоматизированную настройку локального Kubernetes-кластера с использованием Vagrant, VMware и `kubeadm`. Кластер состоит из одного control-plane узла и двух worker-узлов, настроенных для работы в изолированной сети.
 
+Сам workshop по **cilium l2 announcements** располагается [тут](workshop/README.md).
+
 ## Основные компоненты
 
 - **Control Plane (server)**:
